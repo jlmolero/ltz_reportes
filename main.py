@@ -1,4 +1,7 @@
 from common.ejecucion import gastos_periodo
+import PySimpleGUI as sg
 
-pagos=gastos_periodo([7])
-print(pagos)
+
+
+from screens.mainscreen import mainscreen
+mainscreen()
