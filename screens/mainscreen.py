@@ -1,4 +1,5 @@
 #import PySimpleGUI as sg
+import platform
 import PySimpleGUI as sg
 from common.ejecucion import gastos_periodo, informe_ejecucion_gasto
 import pandas as pd
@@ -108,11 +109,15 @@ def mainscreen():
 
         elif event == "-EJECUCION_FUENTE-":
             from screens.ejecucion_fuente_screen import ejecucion_fuente
-            window.disable()
-            ejecucion_fuente(meses_seleccionados)
-            window.enable()
-            window.force_focus()
-        
+            if platform.system() == "Windows":
+                window.disable()
+                ejecucion_fuente(meses_seleccionados)
+                window.enable()
+                window.force_focus()
+            else:
+                ejecucion_fuente(meses_seleccionados)
+                window.force_focus()
+            
         elif event == "-EXCEL-":
             ruta=sg.popup_get_folder("Seleccionar Destino")
             print(ruta)
