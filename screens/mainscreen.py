@@ -9,29 +9,33 @@ import pandas as pd
 
 def mainscreen():
 
-    tabla_pagos=[sg.Table(values=[], headings=["Código de Partida", "Descripción de Partida", "Recursos por Operaciones", "Situado Constitucional", "Total"],
-                         col_widths=[15, 50, 12, 12, 12], auto_size_columns=False, justification="center", num_rows=12, font=("Helvetica", 12), key="-TABLA-")
-                         ]
+    fila_combo_periodos=[sg.Combo(["Año Completo","Primer Trimestre", "Segundo Trimestre", "Tercer Trimestre", "Cuarto Trimestre"],
+                  default_value="", key="-TRIMESTRES-", readonly=True, font=("Helvetica", 12), enable_events=True)]
+
+    fila_meses = [sg.Checkbox("Ene", key="-1-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("Feb", key="-2-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("Mar", key="-3-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("Abr", key="-4-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("May", key="-5-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("Jun", key="-6-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("Jul", key="-7-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("Ago", key="-8-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("Sep", key="-9-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("Oct", key="-10-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("Nov", key="-11-", font=("Helvetica", 12), enable_events=True),
+        sg.Checkbox("Dic", key="-12-", font=("Helvetica", 12), enable_events=True),
+        ]
+
+    fila_ejecucion_fuente = [
+        sg.Text("Informe de Ejecución de Gastos según Fuente de Financiamiento", font=("Helvetica", 12)),
+        sg.Button("Consultar", key="-EJECUCION_FUENTE-", font=("Helvetica", 12), disabled=True) ]
 
     layout = [
-        [sg.Text("Prueba")],
-        [sg.Combo(["Año Completo","Primer Trimestre", "Segundo Trimestre", "Tercer Trimestre", "Cuarto Trimestre"],
-                  default_value="", key="-TRIMESTRES-", readonly=True, font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Ene", key="-1-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Feb", key="-2-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Mar", key="-3-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Abr", key="-4-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("May", key="-5-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Jun", key="-6-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Jul", key="-7-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Ago", key="-8-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Sep", key="-9-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Oct", key="-10-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Nov", key="-11-", font=("Helvetica", 12), enable_events=True),
-    sg.Checkbox("Dic", key="-12-", font=("Helvetica", 12), enable_events=True),
-    sg.Push(), sg.Button("Consultar", key="-CONSULTAR-")
-    ],
-        tabla_pagos,
+        [sg.Text("Informes Para el Año 2024", font=("Helvetica", 16, "bold"))],
+        fila_combo_periodos,
+        fila_meses,
+        fila_ejecucion_fuente,
+        
         [sg.Push(),sg.Button("Exportar a Excel", key="-EXCEL-", font=("Helvetica", 12))]
         
         ]
@@ -49,16 +53,13 @@ def mainscreen():
         elif event == "-1-" or event == "-2-" or event == "-3-" or event == "-4-" or event == "-5-" or event == "-6-" or event == "-7-" or event == "-8-" or event == "-9-" or event == "-10-" or event == "-11-" or event == "-12-":
             meses_seleccionados = []
             window["-TRIMESTRES-"].update(value="")
-            for i in range(1,12):
+            for i in range(1,13):
                 if values[f"-{i}-"]:
                     meses_seleccionados.append(i)
-
-        elif event == "-CONSULTAR-":
-            pagos=gastos_periodo(meses_seleccionados)
-            informe=informe_ejecucion_gasto(pagos, meses_seleccionados)
-            lista_informe=informe.values.tolist()
-
-            window["-TABLA-"].update(values=lista_informe)
+            if meses_seleccionados != []:
+                window["-EJECUCION_FUENTE-"].update(disabled=False)
+            else:
+                window["-EJECUCION_FUENTE-"].update(disabled=True)
 
         elif event == "-TRIMESTRES-":
             
@@ -99,6 +100,18 @@ def mainscreen():
                 meses_seleccionados = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
                 for i in range(1,13):
                     window[f"-{i}-"].update(value=True)
+
+            if meses_seleccionados != []:
+                window["-EJECUCION_FUENTE-"].update(disabled=False)
+            else:
+                window["-EJECUCION_FUENTE-"].update(disabled=True)
+
+        elif event == "-EJECUCION_FUENTE-":
+            from screens.ejecucion_fuente_screen import ejecucion_fuente
+            window.disable()
+            ejecucion_fuente(meses_seleccionados)
+            window.enable()
+            window.force_focus()
         
         elif event == "-EXCEL-":
             ruta=sg.popup_get_folder("Seleccionar Destino")

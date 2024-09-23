@@ -1,8 +1,16 @@
 import pandas as pd
 import datetime as dt
 import openpyxl
+import yaml
 
-ruta_pagos='./data/RegistroPagos.xlsx'
+with open('./config.yaml', 'r') as f:
+    config = yaml.safe_load(f)
+
+
+
+#ruta_pagos='./data/RegistroPagos.xlsx'
+ruta_pagos = config['origen_pagos']
+#ruta_pagos = r"\\dc2\administracion\2024\CUADROS\Registro de Pagos.xlsx"
 
 # Define un diccionario que mapea los valores de la columna Cuenta a los valores de la columna FuenteDeFinanciamiento
 cuenta_fuente_financiamiento = {
@@ -28,25 +36,48 @@ partida_descripcion = {
     '4.98':'RECTIFICACIONES AL PRESUPUESTO'
 }
 
-meses={
-        'enero': 1,
-        'febrero': 2,
-        'marzo': 3,
-        'abril': 4,
-        'mayo': 5,
-        'junio': 6,
-        'julio': 7,
-        'agosto': 8,
-        'septiembre': 9,
-        'octubre': 10,
-        'noviembre': 11,
-        'diciembre': 12
-    }
+def periodo_meses(meses_interes):
+    meses={
+    'enero': 1,
+    'febrero': 2,
+    'marzo': 3,
+    'abril': 4,
+    'mayo': 5,
+    'junio': 6,
+    'julio': 7,
+    'agosto': 8,
+    'septiembre': 9,
+    'octubre': 10,
+    'noviembre': 11,
+    'diciembre': 12
+}
+
+    if meses_interes == [1, 2, 3]:
+        periodo = 'Primer Trimestre'
+    elif meses_interes == [4, 5, 6]:
+        periodo = 'Segundo Trimestre'
+    elif meses_interes == [7, 8, 9]:
+        periodo = 'Tercer Trimestre'
+    elif meses_interes == [10, 11, 12]:
+        periodo = 'Cuarto Trimestre'
+    elif meses_interes == [1, 2,3,4,5,6,7,8,9,10,11,12]:
+        periodo = 'Año Completo' 
+    else:
+        if len(meses_interes) == 1:
+            periodo=list(meses.keys())[list(meses.values()).index(meses_interes[0])]
+        else:
+            periodo=''
+            for mes, num in meses.items():
+                if num in meses_interes:
+                    periodo=periodo + mes + ', '
+            periodo=periodo[:-2]
+
+    return(periodo)
 
 def gastos_periodo(meses_interes):
     # ejecucion_gasto.py
 
-
+    """
     meses={
         'enero': 1,
         'febrero': 2,
@@ -72,7 +103,7 @@ def gastos_periodo(meses_interes):
         periodo = 'Cuarto Trimestre'
     else:
         periodo = meses_interes
-
+    """
     datos = pd.read_excel(ruta_pagos, sheet_name="Pagos") # Importar datos
     
     #Eliminar registros
@@ -84,6 +115,10 @@ def gastos_periodo(meses_interes):
 
     # Seleccionar solo los registros que corresponden al periodo deseado
     datos = datos[datos['Fecha'].dt.month.isin(meses_interes)]
+
+    #Sustituir valores - en la columna IVA
+    datos['IVA'] = datos['IVA'].replace('-', 0)
+
 
     #crear una columna que contendra las diferentes fuentes de financimiento segun la cuenta de donde sale los recursos
     fuente_financiamiento = datos['Cuenta'].map(cuenta_fuente_financiamiento)
@@ -98,7 +133,7 @@ def gastos_periodo(meses_interes):
     return datos
 
 def informe_ejecucion_gasto(datos, meses_interes):
-    iva_periodo= datos[datos['Fecha'].dt.month.isin(meses_interes)].pivot_table(values='IVA', index=None, columns='FuenteDeFinanciamiento', aggfunc='sum').fillna(0).reset_index()
+    iva_periodo= datos[datos['Fecha'].dt.month.isin(meses_interes)].pivot_table(values='IVA', index=None, columns='FuenteDeFinanciamiento', aggfunc='sum').infer_objects(copy=False).fillna(0).reset_index()
     fila_iva_mes = pd.DataFrame({'CodigoPartida':['4.03.18.01.00'], 'DescripcionPartida':['Impuesto al valor Agregado'], 'Recursos por Operaciones':[iva_periodo.loc[0, 'Recursos por Operaciones']], 'Situado Constitucional':[iva_periodo.loc[0, 'Situado Constitucional']]}).fillna(0)
 
     informe_gasto_ejecutado = datos.groupby(['CodigoPartida', 'DescripcionPartida', 'FuenteDeFinanciamiento'])['MontoSinIVA'].sum().unstack('FuenteDeFinanciamiento').fillna(0).rename_axis(None, axis=1).reset_index()
@@ -117,4 +152,5 @@ def informe_ejecucion_gasto(datos, meses_interes):
 
  
     return informe_gasto_ejecutado
+
 
