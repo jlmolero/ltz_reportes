@@ -117,7 +117,8 @@ def gastos_periodo(meses_interes):
     datos = datos[datos['Fecha'].dt.month.isin(meses_interes)]
 
     #Sustituir valores - en la columna IVA
-    datos['IVA'] = datos['IVA'].replace('-', 0)
+    #datos['IVA'] = datos['IVA'].replace('-', 0)
+    datos['IVA'] = datos['IVA'].apply(lambda x: 0 if x == '-' else x)
 
 
     #crear una columna que contendra las diferentes fuentes de financimiento segun la cuenta de donde sale los recursos
@@ -134,9 +135,14 @@ def gastos_periodo(meses_interes):
 
 def informe_ejecucion_gasto(datos, meses_interes):
     iva_periodo= datos[datos['Fecha'].dt.month.isin(meses_interes)].pivot_table(values='IVA', index=None, columns='FuenteDeFinanciamiento', aggfunc='sum').infer_objects(copy=False).fillna(0).reset_index()
+    #Reindexamos las columnas para garantizar que tenga valores en todas las fuentes de financiamiento
+    iva_periodo = iva_periodo.reindex(columns=['Recursos por Operaciones', 'Situado Constitucional'], fill_value=0)
+
     fila_iva_mes = pd.DataFrame({'CodigoPartida':['4.03.18.01.00'], 'DescripcionPartida':['Impuesto al valor Agregado'], 'Recursos por Operaciones':[iva_periodo.loc[0, 'Recursos por Operaciones']], 'Situado Constitucional':[iva_periodo.loc[0, 'Situado Constitucional']]}).fillna(0)
 
     informe_gasto_ejecutado = datos.groupby(['CodigoPartida', 'DescripcionPartida', 'FuenteDeFinanciamiento'])['MontoSinIVA'].sum().unstack('FuenteDeFinanciamiento').fillna(0).rename_axis(None, axis=1).reset_index()
+    # Reindexamos las columnas para garantizar que tenga valores en todas las fuentes de financiamiento
+    informe_gasto_ejecutado = informe_gasto_ejecutado.reindex(columns=['CodigoPartida', 'DescripcionPartida', 'Recursos por Operaciones', 'Situado Constitucional'], fill_value=0)
 
     informe_gasto_ejecutado = pd.concat([informe_gasto_ejecutado, fila_iva_mes], ignore_index=True).sort_values(by='CodigoPartida')
 
@@ -151,6 +157,40 @@ def informe_ejecucion_gasto(datos, meses_interes):
     informe_gasto_ejecutado = pd.concat([informe_gasto_ejecutado, informe_gasto_ejecutado_subtotales], ignore_index=True).sort_values(by='CodigoPartida')
 
  
+    #return informe_gasto_ejecutado
     return informe_gasto_ejecutado
 
+def informe_ejecucion_cuenta(datos, meses_interes):
+    
+    iva_periodo= datos[datos['Fecha'].dt.month.isin(meses_interes)].pivot_table(values='IVA', index=None, columns='Cuenta', aggfunc='sum').infer_objects(copy=False).fillna(0).reset_index()
+    # Reindexamos el dataframe para garantizar que tenga valores para todas las cuentas
+    iva_periodo = iva_periodo.reindex(columns=['0171', '2633', '4363', '6597', 'PATRIA'], fill_value=0.0)
+
+    
+    fila_iva_mes = pd.DataFrame({'CodigoPartida':['4.03.18.01.00'], 'DescripcionPartida':['Impuesto al valor Agregado'],
+                                 '0171':[iva_periodo.loc[0, '0171']],
+                                 '2633':[iva_periodo.loc[0, '2633']],
+                                 '4363':[iva_periodo.loc[0,'4363']],
+                                 '6597':[iva_periodo.loc[0,'6597']],
+                                 'PATRIA':[iva_periodo.loc[0,'PATRIA']]
+                                 }).fillna(0)
+
+    
+    informe_gasto_ejecutado = datos.groupby(['CodigoPartida', 'DescripcionPartida', 'Cuenta'])['MontoSinIVA'].sum().unstack('Cuenta').fillna(0).rename_axis(None, axis=1).reset_index()
+    # Reindexamos el dataframe para garantizar que tenga valores para todas las Cuentas
+    informe_gasto_ejecutado = informe_gasto_ejecutado.reindex(columns=['CodigoPartida', 'DescripcionPartida', '0171', '2633', '4363', '6597', 'PATRIA'], fill_value=0.0)
+    informe_gasto_ejecutado = pd.concat([informe_gasto_ejecutado, fila_iva_mes], ignore_index=True).sort_values(by='CodigoPartida')
+    
+    # Ahora voy a agregar una columna con el valor total de 'MontoSinIVA' para cada agrupación
+    informe_gasto_ejecutado['Total'] = informe_gasto_ejecutado.iloc[:, 2:].sum(axis=1)
+
+    #Calcular subtotales    
+    informe_gasto_ejecutado_subtotales = informe_gasto_ejecutado.groupby(informe_gasto_ejecutado['CodigoPartida'].str[:4]).agg({'0171':'sum', '2633':'sum', '4363':'sum', '6597':'sum', 'PATRIA':'sum', 'Total': 'sum'}).rename_axis('CodigoPartida').reset_index()
+    
+    #informe_gasto_ejecutado_subtotales['CodigoPartida'] = informe_gasto_ejecutado_subtotales['CodigoPartida']# + '.00.00.00'
+    informe_gasto_ejecutado_subtotales['DescripcionPartida'] = informe_gasto_ejecutado_subtotales['CodigoPartida'].map(partida_descripcion)
+    informe_gasto_ejecutado = pd.concat([informe_gasto_ejecutado, informe_gasto_ejecutado_subtotales], ignore_index=True).sort_values(by='CodigoPartida')
+
+    
+    return informe_gasto_ejecutado
 
