@@ -2,6 +2,8 @@ import pandas as pd
 import datetime as dt
 import openpyxl
 import yaml
+import re
+from os import path
 
 with open('./config.yaml', 'r') as f:
     config = yaml.safe_load(f)
@@ -72,7 +74,7 @@ def periodo_meses(meses_interes):
                     periodo=periodo + mes + ', '
             periodo=periodo[:-2]
 
-    return(periodo)
+    return periodo
 
 def gastos_periodo(meses_interes):
     # ejecucion_gasto.py
@@ -154,7 +156,15 @@ def informe_ejecucion_gasto(datos, meses_interes):
     informe_gasto_ejecutado_subtotales['CodigoPartida'] = informe_gasto_ejecutado_subtotales['CodigoPartida']# + '.00.00.00'
     informe_gasto_ejecutado_subtotales['DescripcionPartida'] = informe_gasto_ejecutado_subtotales['CodigoPartida'].map(partida_descripcion)
 
+    #fila de totales generales
+    fila_totales_generales = pd.DataFrame({'CodigoPartida':['TOTALES'], 'DescripcionPartida':[''], 
+                                      'Recursos por Operaciones':[informe_gasto_ejecutado['Recursos por Operaciones'].sum()], 
+                                      'Situado Constitucional':[informe_gasto_ejecutado['Situado Constitucional'].sum()],
+                                      'Total':[informe_gasto_ejecutado['Total'].sum()]})
+
+    # Agregar subtotales y totales generales
     informe_gasto_ejecutado = pd.concat([informe_gasto_ejecutado, informe_gasto_ejecutado_subtotales], ignore_index=True).sort_values(by='CodigoPartida')
+    informe_gasto_ejecutado = pd.concat([informe_gasto_ejecutado, fila_totales_generales], ignore_index=True).sort_values(by='CodigoPartida')
 
  
     #return informe_gasto_ejecutado
@@ -194,3 +204,145 @@ def informe_ejecucion_cuenta(datos, meses_interes):
     
     return informe_gasto_ejecutado
 
+def ejecucion_gasto_excel(informe_gasto_ejecutado, meses_interes, ruta):
+    from openpyxl.styles import Font, Alignment
+    from os import path
+    ruta_archivo=""
+    
+    periodo=f"{periodo_meses(meses_interes)}"
+    periodos_interesantes=['Primer Trimestre', 'Segundo Trimestre', 'Tercer Trimestre', 'Cuarto Trimestre', 'Año Completo']
+
+    ##########################
+    ######### Exportar a Excel
+    ##########################
+    
+    if len(meses_interes) == 1:
+        ruta_archivo = path.join(ruta, f'informe_gasto_ejecutado_{meses_interes[0]}_{periodo}.xlsx')
+        
+    elif len(meses_interes) > 1:
+        if periodo in periodos_interesantes:
+            ruta_archivo = path.join(ruta, f'informe_gasto_ejecutado_{periodo}.xlsx')
+        else:
+            period=''
+            for mes in meses_interes:
+                period=period + '_' + str(mes)
+                
+            ruta_archivo = path.join(ruta, f'informe_gasto_ejecutado_{period[1:]}.xlsx')
+    
+    informe_gasto_ejecutado.to_excel(ruta_archivo, index=False)
+
+
+    ##########################
+    ####### Dar Formato al Iinforme
+    ##########################
+    
+    wb = openpyxl.load_workbook(ruta_archivo)
+    sheet = wb.active
+
+    #Definir propiedades de la hoja
+    sheet.page_setup.paperSize = sheet.PAPERSIZE_LETTER
+    sheet.page_setup.orientation = sheet.ORIENTATION_PORTRAIT
+    sheet.page_setup.fitToHeight = 0
+    sheet.page_setup.fitToWidth = 0
+    sheet.oddFooter.center.text = 'Pág. &P de &N'
+    #Margenes
+    conversor=0.3937007874 # 1cm = 0.3937007874 in
+    sheet.page_margins.top = (1.9 * conversor)
+    sheet.page_margins.bottom = (1.9 * conversor)
+    sheet.page_margins.left = (0.6 * conversor)
+    sheet.page_margins.right = (0.6 * conversor)
+    sheet.page_margins.header = (0.8 * conversor)
+    sheet.page_margins.footer = (0.8 * conversor)
+    #Repetir primeras 5 filas
+    sheet.print_title_rows = '1:5'
+
+    #Definir Ancho de Columnas
+    sheet.column_dimensions['A'].width = 13.71
+    sheet.column_dimensions['B'].width = 44.14
+    sheet.column_dimensions['C'].width = 13.71
+    sheet.column_dimensions['D'].width = 13.71
+    sheet.column_dimensions['E'].width = 13.71
+
+    #Insertar filas vacias al principios del documento
+    sheet.insert_rows(1, 4)
+
+
+    #Definir altura de las filas
+    for idx, row in enumerate(sheet.iter_rows(min_row=1, max_row=sheet.max_row, values_only=False), start=1):
+        if any(cell.value is not None for cell in row):
+            sheet.row_dimensions[idx].height = 30
+
+    #Escribir Titulo
+    sheet.merge_cells('A1:E1')
+    sheet['A1'].alignment = Alignment(horizontal='center')
+    sheet['A1'] = 'INFORME DE GASTO EJECUTADO'
+    sheet['A1'].font = Font(name='Calibri', size=16, bold=True)
+
+    #Escribir Periodo
+    sheet.row_dimensions[2].height = 5
+    sheet.merge_cells('D3:E3')
+    sheet['C3'].alignment = Alignment(horizontal='right')
+    sheet['C3'].font = Font(name='Calibri', size=12, bold=False)
+    sheet['C3'] = 'PERIODO: '
+    sheet['D3'].font = Font(name='Calibri', size=12, bold=True)
+    sheet['D3'] = f"{periodo} 2024"
+
+    #Definir que la fila de titulos sea negrita y que el texto se ajuste 
+    for row in sheet['A5:E5']:
+        for cell in row:
+            cell.font = Font(name='Calibri', size=11, bold=True)
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            
+            
+    for row in sheet.iter_rows(min_row=5, max_row=sheet.max_row, values_only=False):
+        #Filas de Subtotales de Partidas
+        if isinstance(row[0].value, str) and re.match(r'^\d\.\d{2}$', row[0].value): #len(row[0].value) == 4:
+            row[1].alignment = Alignment(wrap_text=True)
+            row[2].number_format = '#,##0.00'
+            row[3].number_format = '#,##0.00'
+            row[4].number_format = '#,##0.00'
+            
+            for cell in row:
+                cell.border = openpyxl.styles.borders.Border(
+                    top=openpyxl.styles.borders.Side(style='thin'),
+                    bottom=openpyxl.styles.borders.Side(style='thin'),
+                    left=openpyxl.styles.borders.Side(style='thin'),
+                    right=openpyxl.styles.borders.Side(style='thin'))
+                cell.fill = openpyxl.styles.PatternFill(fgColor='D9D9D9', fill_type='solid')
+                cell.font = Font(name='Calibri', size=12, bold=True)
+        #filas Normales
+        elif isinstance(row[0].value, str) and re.match(r'^\d\.\d{2}\.\d{2}\.\d{2}\.\d{2}$', row[0].value):
+            row[1].alignment = Alignment(wrap_text=True)
+            row[2].number_format = '#,##0.00'
+            row[3].number_format = '#,##0.00'
+            row[4].number_format = '#,##0.00'
+            
+            for cell in row:
+                cell.border = openpyxl.styles.borders.Border(
+                    top=openpyxl.styles.borders.Side(style='thin'),
+                    bottom=openpyxl.styles.borders.Side(style='thin'),
+                    left=openpyxl.styles.borders.Side(style='thin'),
+                    right=openpyxl.styles.borders.Side(style='thin'))
+                cell.font = Font(name='Calibri', size=11)
+
+        #Fila Totales
+        elif isinstance(row[0].value, str) and row[0].value=='TOTALES':
+            row[2].number_format = '#,##0.00'
+            row[3].number_format = '#,##0.00'
+            row[4].number_format = '#,##0.00'
+            
+            for cell in row:
+                cell.border = openpyxl.styles.borders.Border(
+                    top=openpyxl.styles.borders.Side(style='thin'),
+                    bottom=openpyxl.styles.borders.Side(style='thin'),
+                    left=openpyxl.styles.borders.Side(style='thin'),
+                    right=openpyxl.styles.borders.Side(style='thin'))
+                cell.fill = openpyxl.styles.PatternFill(fgColor='404040', fill_type='solid')
+                cell.font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+
+
+
+    wb.save(ruta_archivo)
+    return True
+
+    

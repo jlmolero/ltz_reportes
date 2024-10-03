@@ -43,7 +43,7 @@ def mainscreen():
         fila_ejecucion_fuente,
         fila_ejecucion_cuenta,
         
-        [sg.Push(),sg.Button("Exportar a Excel", key="-EXCEL-", font=("Helvetica", 12))]
+        #[sg.Push(),sg.Button("Exportar a Excel", key="-EXCEL-", font=("Helvetica", 12))]
         
         ]
 
@@ -117,6 +117,10 @@ def mainscreen():
 
         elif event == "-EJECUCION_FUENTE-":
             from screens.ejecucion_fuente_screen import ejecucion_fuente
+            window.close()
+            ejecucion_fuente(meses_seleccionados)
+            
+            """
             if platform.system() == "Windows":
                 window.disable()
                 ejecucion_fuente(meses_seleccionados)
@@ -125,7 +129,8 @@ def mainscreen():
             else:
                 ejecucion_fuente(meses_seleccionados)
                 window.force_focus()
-
+            """
+                
         elif event == "-EJECUCION_CUENTA-":
             from screens.ejecucion_cuenta_screen import ejecucion_cuenta
             if platform.system() == "Windows":

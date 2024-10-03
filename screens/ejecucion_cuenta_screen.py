@@ -57,7 +57,7 @@ def ejecucion_cuenta(meses_seleccionados):
         [sg.Text("Periodo:", font=("Helvetica", 14)), sg.Text(periodo, font=("Helvetica", 14, "bold"))],
         tabla_pagos,
         fila_totales,
-        [sg.Push(),sg.Button("Exportar a Excel", key="-EXCEL-", font=("Helvetica", 12))]
+        [sg.Button("Regresar", key="-REGRESAR-", font=("Helvetica", 12)), sg.Push(),sg.Button("Exportar a Excel", key="-EXCEL-", font=("Helvetica", 12))]
         
         ]
 
@@ -73,7 +73,21 @@ def ejecucion_cuenta(meses_seleccionados):
             break
         
         elif event == "-EXCEL-":
+            """
             ruta=sg.popup_get_folder("Seleccionar Destino")
-            print(ruta)
+            from common.ejecucion import ejecucion_cuenta_excel
+            exportar=ejecucion_cuenta_excel(informe, meses_seleccionados, ruta)
+            print(exportar)
+            if exportar:
+                sg.popup("Exportado con exito")
+            else:
+                sg.popup("Error al exportar")
+            """
+
+        elif event == "-REGRESAR-":
+            from screens.mainscreen import mainscreen
+            window.close()
+            mainscreen()
+            
 
     window.close()
