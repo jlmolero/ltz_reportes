@@ -3,7 +3,7 @@ import openpyxl
 import re
 import pandas as pd
 import yaml
-from basicas import latino_a_numero
+from common.basicas import latino_a_numero
 
 ######################
 #
@@ -178,11 +178,3 @@ def get_resumen_cuenta(cuenta, meses_interes=None):
     resumen_cuenta = movimientos.groupby(['tipoOperacion'])['monto'].sum()
     return resumen_cuenta
 
-mov = get_movimientos('0171',[9])
-#print(mov.to_string(index=False))
-print(mov)
-#print(mov[mov['concepto'].str.contains('G200076496')])
-#print(mov[mov['tipoOperacion'] == ''])
-#print(mov[mov['tipoOperacion'].str.startswith('TRANSFERENCIA RECIBIDA')])
-resumen= get_resumen_cuenta('4363')
-print(resumen)

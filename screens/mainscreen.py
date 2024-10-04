@@ -36,12 +36,18 @@ def mainscreen():
         sg.Button("Consultar", key="-EJECUCION_CUENTA-", font=("Helvetica", 12), disabled=True)
     ]
 
+    fila_conciliacion_pagos = [
+        sg.Text("Conciliación de Pagos", font=("Helvetica", 12)),
+        sg.Button("Consultar", key="-CONCILIACION_PAGOS-", font=("Helvetica", 12), disabled=False)
+    ]
+
     layout = [
         [sg.Text("Informes Para el Año 2024", font=("Helvetica", 16, "bold"))],
         fila_combo_periodos,
         fila_meses,
         fila_ejecucion_fuente,
         fila_ejecucion_cuenta,
+        fila_conciliacion_pagos,
         
         #[sg.Push(),sg.Button("Exportar a Excel", key="-EXCEL-", font=("Helvetica", 12))]
         
@@ -141,6 +147,17 @@ def mainscreen():
             else:
                 ejecucion_cuenta(meses_seleccionados)
                 window.force_focus()
+
+        elif event == "-CONCILIACION_PAGOS-":
+            from screens.conciliacion_pagos_screen import conciliacion_pagos
+            if platform.system() == "Windows":
+                window.close()
+                conciliacion_pagos(meses_seleccionados)
+                
+            else:
+                window.close()
+                conciliacion_pagos(meses_seleccionados)
+                
             
         elif event == "-EXCEL-":
             ruta=sg.popup_get_folder("Seleccionar Destino")
