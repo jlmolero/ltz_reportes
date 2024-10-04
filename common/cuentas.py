@@ -20,7 +20,9 @@ for cuenta, valores in config['cuentas'].items():
         'banco': valores['banco']
     }
 
-
+######################
+# FUNCION PARA OBTENER LOS MOVIMIENTOS DE UNA CUENTA
+######################
 def get_movimientos(cuenta, meses_interes=None):
     ruta = cuentas[cuenta]['ruta']
     banco = cuentas[cuenta]['banco']
@@ -91,7 +93,7 @@ def get_movimientos(cuenta, meses_interes=None):
         movimientos = movimientos.rename(columns={'FECHA': 'fecha', 'SALDO': 'saldo', 'REFERENCIA': 'referencia', 'DESCRIPCION': 'concepto'})
 
         #reordenar las columnas
-        movimientos = movimientos[['fecha', 'referencia', 'lote', 'concepto', 'monto', 'saldo', 'tipoOperacion', 'tipoMovimiento']]
+        movimientos = movimientos[['fecha', 'referencia', 'lote', 'concepto', 'monto', 'saldo', 'tipoOperacion']]
 
     elif banco == 'BDV':
         # elmiar las columnas 'rif' y 'numeroCuenta'
@@ -102,6 +104,14 @@ def get_movimientos(cuenta, meses_interes=None):
 
         # convertir la columna 'fecha' a tipo datetime
         movimientos['fecha'] = pd.to_datetime(movimientos['fecha'], dayfirst=True)
+
+        #Seleccionar solo los movimientos correspondiente al periodo deseado
+        if meses_interes is not None:
+            movimientos = movimientos[movimientos['fecha'].dt.month.isin(meses_interes)]
+        
+        #Convertir las columnas de 'monto' y saldo' a tipo float
+        movimientos['monto'] = movimientos['monto'].apply(latino_a_numero)
+        movimientos['saldo'] = movimientos['saldo'].apply(latino_a_numero)
 
         #Extraer los ultimos 8 digitos de la columna 'referencia' y convertirlos a tipo str
         movimientos['referencia'] = movimientos['referencia'].astype(str).apply(lambda x: x[:-1] if x.endswith(' ') else x)
@@ -160,10 +170,19 @@ def get_movimientos(cuenta, meses_interes=None):
 
     return movimientos
 
+######################
+# FUNCION PARA OBTENER UN RESUMEN DE UNA CUENTA
+######################
+def get_resumen_cuenta(cuenta, meses_interes=None):
+    movimientos = get_movimientos(cuenta,meses_interes)
+    resumen_cuenta = movimientos.groupby(['tipoOperacion'])['monto'].sum()
+    return resumen_cuenta
 
-mov = get_movimientos('6597',[9])
+mov = get_movimientos('0171',[9])
 #print(mov.to_string(index=False))
 print(mov)
 #print(mov[mov['concepto'].str.contains('G200076496')])
-print(mov[mov['tipoOperacion'] == ''])
+#print(mov[mov['tipoOperacion'] == ''])
 #print(mov[mov['tipoOperacion'].str.startswith('TRANSFERENCIA RECIBIDA')])
+resumen= get_resumen_cuenta('4363')
+print(resumen)
