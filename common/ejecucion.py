@@ -4,9 +4,14 @@ import openpyxl
 import yaml
 import re
 from os import path
+import sys
 
-with open('./config.yaml', 'r') as f:
-    config = yaml.safe_load(f)
+if sys.platform == 'Windows':
+    with open('./config.yaml', 'r') as f:
+        config = yaml.safe_load(f)
+elif sys.platform == 'linux':
+    with open('./config_linux.yaml', 'r') as f:
+        config = yaml.safe_load(f)
 
 
 
@@ -127,11 +132,16 @@ def gastos_periodo(meses_interes):
     fuente_financiamiento = datos['Cuenta'].map(cuenta_fuente_financiamiento)
     #Asignar la fuente de financiamiento a las columnas donde ya venga especificada
     datos = datos.assign(FuenteDeFinanciamiento=datos['FuenteDeFinanciamiento'].fillna(fuente_financiamiento))
+    datos['Referencia'] = datos['Referencia'].apply(lambda x: 0 if pd.isna(x) or isinstance(x, str) else x)
+    datos['Referencia'] = datos['Referencia'].astype(int).astype(str).str.zfill(8)
+    # crear una columna llamada TotalRetenido que sea la suma de ivaRetenido, islrRetenido y sedatezRetenido
+    datos['totalRetenido'] = datos['ivaRetenido'] + datos['islrRetenido'] + datos['sedatezRetenido']
+
     
 
     #Seleccionar las columnas deseadas para la tabla de datos
-    datos=datos[['Fecha', 'Cuenta', 'OrdenPago', 'Beneficiario', 'CodigoPartida', 'DescripcionPartida', 'Descripcion', 'MontoSinIVA', 'IVA', 'FuenteDeFinanciamiento']]
-    
+    #datos=datos[['Fecha', 'Cuenta', 'OrdenPago', 'Beneficiario', 'CodigoPartida', 'DescripcionPartida', 'Descripcion', 'MontoSinIVA', 'IVA', 'FuenteDeFinanciamiento']]
+    datos=datos[['Fecha', 'Cuenta', 'OrdenPago', 'Beneficiario', 'Referencia', 'MontoPagado','totalRetenido']]
     
     return datos
 

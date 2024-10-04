@@ -1,0 +1,18 @@
+origen_pagos: "./data/RegistroPagos.xlsx"
+#origen_pagos: \\dc2\administracion\2024\CUADROS\Registro de Pagos.xlsx
+
+#origien cuentas
+cuentas:
+    "0171":
+        ruta: "./data/movimientos/0171"
+        banco: "BANCRECER"
+    "2633":
+        ruta: "./data/movimientos/2633"
+        banco: "BDV"
+    "4363":
+        ruta: "./data/movimientos/4363"
+        banco: "BDV"
+    "6597":
+        ruta: "./data/movimientos/6597"
+        banco: "BDV"
+

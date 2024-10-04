@@ -38,7 +38,11 @@ def mainscreen():
 
     fila_conciliacion_pagos = [
         sg.Text("Conciliación de Pagos", font=("Helvetica", 12)),
-        sg.Button("Consultar", key="-CONCILIACION_PAGOS-", font=("Helvetica", 12), disabled=False)
+        sg.Button("0171", key="-CONCILIACION_0171-", font=("Helvetica", 12), disabled=False),
+        sg.Button("2633", key="-CONCILIACION_2633-", font=("Helvetica", 12), disabled=False),
+        sg.Button("4363", key="-CONCILIACION_4363-", font=("Helvetica", 12), disabled=False),
+        sg.Button("6597", key="-CONCILIACION_6597-", font=("Helvetica", 12), disabled=False),
+
     ]
 
     layout = [
@@ -148,16 +152,23 @@ def mainscreen():
                 ejecucion_cuenta(meses_seleccionados)
                 window.force_focus()
 
-        elif event == "-CONCILIACION_PAGOS-":
+        elif event == "-CONCILIACION_0171-":
             from screens.conciliacion_pagos_screen import conciliacion_pagos
-            if platform.system() == "Windows":
-                window.close()
-                conciliacion_pagos(meses_seleccionados)
-                
-            else:
-                window.close()
-                conciliacion_pagos(meses_seleccionados)
-                
+            window.close()
+            conciliacion_pagos(meses_seleccionados, "0171")
+        elif event == "-CONCILIACION_2633-":
+            from screens.conciliacion_pagos_screen import conciliacion_pagos
+            window.close()
+            conciliacion_pagos(meses_seleccionados, "2633")
+        elif event == "-CONCILIACION_4363-":
+            from screens.conciliacion_pagos_screen import conciliacion_pagos
+            window.close()
+            conciliacion_pagos(meses_seleccionados, "4363")
+        elif event == "-CONCILIACION_6597-":
+            from screens.conciliacion_pagos_screen import conciliacion_pagos
+            window.close()
+            conciliacion_pagos(meses_seleccionados, "6597")
+                    
             
         elif event == "-EXCEL-":
             ruta=sg.popup_get_folder("Seleccionar Destino")

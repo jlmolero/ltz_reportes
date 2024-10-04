@@ -4,14 +4,19 @@ import re
 import pandas as pd
 import yaml
 from common.basicas import latino_a_numero
+import sys
 
 ######################
 #
 # Cuentas
 #
 ######################
-with open('./config.yaml', 'r') as f:
-    config = yaml.safe_load(f)
+if sys.platform == 'Windows':
+    with open('./config.yaml', 'r') as f:
+        config = yaml.safe_load(f)
+elif sys.platform == 'linux':
+    with open('./config_linux.yaml', 'r') as f:
+        config = yaml.safe_load(f)
 
 cuentas = {}
 for cuenta, valores in config['cuentas'].items():
