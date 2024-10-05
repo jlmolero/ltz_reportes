@@ -137,6 +137,9 @@ def gastos_periodo(meses_interes):
     # crear una columna llamada TotalRetenido que sea la suma de ivaRetenido, islrRetenido y sedatezRetenido
     datos['totalRetenido'] = datos['ivaRetenido'] + datos['islrRetenido'] + datos['sedatezRetenido']
 
+    #Modificar el formato de los valores de OrdenPago
+    datos['OrdenPago'] = datos['OrdenPago'].apply(lambda x: 'OP' + x[7:] if isinstance(x, str) else x)
+
     
 
     #Seleccionar las columnas deseadas para la tabla de datos
@@ -355,4 +358,5 @@ def ejecucion_gasto_excel(informe_gasto_ejecutado, meses_interes, ruta):
     wb.save(ruta_archivo)
     return True
 
-    
+pagos = gastos_periodo([7])
+print(pagos)
