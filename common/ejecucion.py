@@ -4,12 +4,12 @@ import openpyxl
 import yaml
 import re
 from os import path
-import sys
+import platform
 
-if sys.platform == 'Windows':
+if platform.system() == 'Windows':
     with open('./config.yaml', 'r') as f:
         config = yaml.safe_load(f)
-elif sys.platform == 'linux':
+elif platform.system() == 'linux':
     with open('./config_linux.yaml', 'r') as f:
         config = yaml.safe_load(f)
 
@@ -358,5 +358,5 @@ def ejecucion_gasto_excel(informe_gasto_ejecutado, meses_interes, ruta):
     wb.save(ruta_archivo)
     return True
 
-pagos = gastos_periodo([7])
-print(pagos)
+#pagos = gastos_periodo([7])
+#print(pagos)

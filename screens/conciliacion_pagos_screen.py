@@ -1,8 +1,9 @@
 import PySimpleGUI as sg
 import pandas as pd
-from common.cuentas import get_movimientos
+from common.cuentas import get_movimientos, exportar_conciliacion
 from common.ejecucion import gastos_periodo
 from common.transferencias import get_transferencias_periodo
+import os
 
 def conciliacion_pagos(meses_seleccionados, cuenta):
     
@@ -21,17 +22,32 @@ def conciliacion_pagos(meses_seleccionados, cuenta):
     gastos=gastos[gastos['Cuenta']==cuenta]
     gastos=gastos[['Fecha','OrdenPago','Referencia','Beneficiario','MontoPagado','totalRetenido']]
     
+
+    pagos = pd.DataFrame()
+    recibidos = pd.DataFrame()
+
+    #pago={}
+    #print(movimientos)
+    #########################
+    # CREAR TABLA DE PAGOS RECIBIDOS POR LA CUENTA
+    ########################
+    
+    for index, movimiento in movimientos.iterrows():
+        if movimiento['monto']>0:
+            recibido={}
+            recibido['fecha']=movimiento['fecha']
+            recibido['concepto']=movimiento['concepto']
+            recibido['referencia']=movimiento['referencia']
+            recibido['monto']=movimiento['monto']
+            recibido['tipoOperacion']=movimiento['tipoOperacion']
+            recibidos = pd.concat([recibidos, pd.DataFrame(recibido, index=[0])], ignore_index=True)
+            movimientos.drop(index=movimiento.name, inplace=True)
+
     #########################
     # CREAR TABLA DE PAGOS QUE MATCHEAN ENTRE MOVIMIENTOS Y GASTOS
     ########################
-    pagos = pd.DataFrame()
 
-    #pago={}
-    print(movimientos)
-    
-    for index, movimiento in movimientos.iterrows():
-        
-        if movimiento['tipoOperacion']=='PAGOS A PROVEEDORES':
+        elif movimiento['tipoOperacion']=='PAGOS A PROVEEDORES':
             pago={}
             pago['fecha']=movimiento['fecha']
             referencia_match = gastos[gastos['Referencia']==movimiento['lote']]
@@ -59,8 +75,8 @@ def conciliacion_pagos(meses_seleccionados, cuenta):
         comision = {}
         mov_match = movimientos[movimientos['lote']==pago['referencia']]
         if not mov_match.empty:
-            pago['comision']=mov_match['monto'].iloc[0]
-            pago['comisionRef']=mov_match['referencia'].iloc[0]
+            #pago['comision']=mov_match['monto'].iloc[0]
+            #pago['comisionRef']=mov_match['referencia'].iloc[0]
             comision['fecha']=pago['fecha']
             comision['ordenPago']=pago['ordenPago']
             comision['referencia']=pago['referencia']
@@ -98,13 +114,85 @@ def conciliacion_pagos(meses_seleccionados, cuenta):
             transferencias.drop(index=transf_mov_match.index[0], inplace=True)
             #transferencias.drop(index=transf_mov_match.name, inplace=True)
 
+    #########################
+    # CREAR TABLA DE COMISIONES POR TRASNFERENCIA DE RETENCIONES
+    ########################
+    comisiones_ret=pd.DataFrame()
 
+    for index, retencion in retenciones.iterrows():
+        comision_ret={}
+        ret_match = movimientos[movimientos['referencia']==retencion['referencia']]
+        
+
+        if not ret_match.empty:
+            comision_ret['fecha']=ret_match['fecha'].iloc[0] 
+            comision_ret['ordenPago']=retencion['ordenPago']
+            comision_ret['referencia']=ret_match['referencia'].iloc[0]
+            comision_ret['montoComision']=ret_match['monto'].iloc[0]
+
+            comisiones_ret = pd.concat([comisiones_ret, pd.DataFrame(comision_ret, index=[0])], ignore_index=True)
+            
+            movimientos.drop(index=ret_match.index[0], inplace=True)
+
+    #########################
+    # CREAR UN DATAFRAME CONSOLIDADO DE PAGOS
+    ########################
+    consolidado_pagos = pd.DataFrame()
+    for index, pago in pagos.iterrows():
+        comision_match = comisiones[comisiones['ordenPago']==pago['ordenPago']]
+        retencion_match = retenciones[retenciones['ordenPago']==pago['ordenPago']]
+        if not comisiones_ret.empty:
+            comisiones_ret_match = comisiones_ret[comisiones_ret['ordenPago']==pago['ordenPago']]
+        else:
+            comisiones_ret_match = pd.DataFrame()
+
+
+        consolidado_pago={}
+        consolidado_pago['fecha']=pago['fecha']
+        consolidado_pago['ordenPago']=pago['ordenPago']
+        consolidado_pago['beneficiario']=pago['beneficiario']
+        consolidado_pago['montoOP']=pago['montoOrdenPago']
+        consolidado_pago['pagado']=pago['montoOperacion']
+        consolidado_pago['lote']=pago['lote']
+        if not comision_match.empty:
+            consolidado_pago['comision']=comision_match['montoComision'].iloc[0]
+            consolidado_pago['comisionRef']=comision_match['referencia'].iloc[0]
+        else:
+            consolidado_pago['comision']=0
+            consolidado_pago['comisionRef']=''
+        if not retencion_match.empty:
+            consolidado_pago['retCalculada']=retencion_match['montoRetencion'].iloc[0]
+            consolidado_pago['retPagada']=retencion_match['montoOperacion'].iloc[0]
+            consolidado_pago['retRef']=retencion_match['referencia'].iloc[0]
+        else:
+            consolidado_pago['retCalculada']=0
+            consolidado_pago['retPagada']=0
+            consolidado_pago['retRef']=''
+        if not comisiones_ret_match.empty:
+            consolidado_pago['retComision']=comisiones_ret_match['montoComision'].iloc[0]
+        else:
+            consolidado_pago['retComision']=0
+
+        
+
+
+
+
+        consolidado_pagos = pd.concat([consolidado_pagos, pd.DataFrame(consolidado_pago, index=[0])], ignore_index=True)
+
+
+    os.system('cls' if os.name == 'nt' else 'clear')
+    """
+    print('Pagos Recibidos:')
+    print(recibidos)
     print('Pagos Identificados:')
     print(pagos)
     print('Comisiones Identificadas:')
     print(comisiones)
     print('Retenciones Identificadas:')
     print(retenciones)
+    print('Comisiones por Retenciones:')
+    print(comisiones_ret)
     #print(movimientos)
     print('Gastos Huerfanos:')
     print(gastos)
@@ -112,16 +200,20 @@ def conciliacion_pagos(meses_seleccionados, cuenta):
     print(transferencias)
     print('Movimientos Huerfanos:')
     print(movimientos)
+    print('Consolidado de Pagos:')
+    print(consolidado_pagos)
     #print(suma_comisiones)
     #print(gastos)
     
     #print(transferencias)
-
+    """
     layout=[
-        [sg.Text("Conciliación de Pagos", font=("Helvetica", 16, "bold"))],
+        [sg.Text("Conciliación de Cuenta:", font=("Helvetica", 16, "bold")),
+         sg.Text(cuenta, font=("Helvetica", 16, "bold"))],
         [sg.Text("Informes Para el Año 2024", font=("Helvetica", 12))],
         [sg.Text("Conciliación de Pagos", font=("Helvetica", 12))],
-        [sg.Button("Regresar", key="-REGRESAR-", font=("Helvetica", 12))],
+        [sg.Button("Regresar", key="-REGRESAR-", font=("Helvetica", 12)), sg.Push(),
+        sg.Button("Exportar a Excel", key="-EXPORTAR-", font=("Helvetica", 12))],
     ]
     
     window=sg.Window("Conciliación de Pagos", layout)
@@ -135,5 +227,8 @@ def conciliacion_pagos(meses_seleccionados, cuenta):
             from screens.mainscreen import mainscreen
             window.close()
             mainscreen()
-            return
+        elif event == "-EXPORTAR-":
+            destino=sg.popup_get_folder(message="Seleccionar carpeta para exportar", title="Carpeta de Destino")
+            exportar_conciliacion(cuenta, meses_seleccionados, destino, consolidado_pagos, movimientos, gastos, transferencias)
+
     window.close()

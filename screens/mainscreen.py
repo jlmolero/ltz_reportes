@@ -38,10 +38,10 @@ def mainscreen():
 
     fila_conciliacion_pagos = [
         sg.Text("Conciliación de Pagos", font=("Helvetica", 12)),
-        sg.Button("0171", key="-CONCILIACION_0171-", font=("Helvetica", 12), disabled=False),
-        sg.Button("2633", key="-CONCILIACION_2633-", font=("Helvetica", 12), disabled=False),
-        sg.Button("4363", key="-CONCILIACION_4363-", font=("Helvetica", 12), disabled=False),
-        sg.Button("6597", key="-CONCILIACION_6597-", font=("Helvetica", 12), disabled=False),
+        sg.Button("0171", key="-CONCILIACION_0171-", font=("Helvetica", 12), disabled=True),
+        sg.Button("2633", key="-CONCILIACION_2633-", font=("Helvetica", 12), disabled=True),
+        sg.Button("4363", key="-CONCILIACION_4363-", font=("Helvetica", 12), disabled=True),
+        sg.Button("6597", key="-CONCILIACION_6597-", font=("Helvetica", 12), disabled=True),
 
     ]
 
@@ -76,9 +76,18 @@ def mainscreen():
             if meses_seleccionados != []:
                 window["-EJECUCION_FUENTE-"].update(disabled=False)
                 window["-EJECUCION_CUENTA-"].update(disabled=False)
+                window["-CONCILIACION_0171-"].update(disabled=False)
+                window["-CONCILIACION_2633-"].update(disabled=False)
+                window["-CONCILIACION_4363-"].update(disabled=False)
+                window["-CONCILIACION_6597-"].update(disabled=False)
+
             else:
                 window["-EJECUCION_FUENTE-"].update(disabled=True)
                 window["-EJECUCION_CUENTA-"].update(disabled=True)
+                window["-CONCILIACION_0171-"].update(disabled=True)
+                window["-CONCILIACION_2633-"].update(disabled=True)
+                window["-CONCILIACION_4363-"].update(disabled=True)
+                window["-CONCILIACION_6597-"].update(disabled=True)
 
         elif event == "-TRIMESTRES-":
             
@@ -122,8 +131,18 @@ def mainscreen():
 
             if meses_seleccionados != []:
                 window["-EJECUCION_FUENTE-"].update(disabled=False)
+                window["-EJECUCION_CUENTA-"].update(disabled=False)
+                window["-CONCILIACION_0171-"].update(disabled=False)
+                window["-CONCILIACION_2633-"].update(disabled=False)
+                window["-CONCILIACION_4363-"].update(disabled=False)
+                window["-CONCILIACION_6597-"].update(disabled=False)
             else:
                 window["-EJECUCION_FUENTE-"].update(disabled=True)
+                window["-EJECUCION_CUENTA-"].update(disabled=True)
+                window["-CONCILIACION_0171-"].update(disabled=True)
+                window["-CONCILIACION_2633-"].update(disabled=True)
+                window["-CONCILIACION_4363-"].update(disabled=True)
+                window["-CONCILIACION_6597-"].update(disabled=True)
 
         elif event == "-EJECUCION_FUENTE-":
             from screens.ejecucion_fuente_screen import ejecucion_fuente

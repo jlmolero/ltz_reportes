@@ -1,12 +1,12 @@
 import pandas as pd
 import datetime as dt
-import openpyxl, yaml, re, sys
+import openpyxl, yaml, re, platform
 from os import path
 
-if sys.platform == 'Windows':
+if platform.system() == 'Windows':
     with open('./config.yaml', 'r') as f:
         config = yaml.safe_load(f)
-elif sys.platform == 'linux':
+elif platform.system() == 'Linux':
     with open('./config_linux.yaml', 'r') as f:
         config = yaml.safe_load(f)
 
