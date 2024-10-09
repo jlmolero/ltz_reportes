@@ -143,8 +143,8 @@ def gastos_periodo(meses_interes):
     
 
     #Seleccionar las columnas deseadas para la tabla de datos
-    #datos=datos[['Fecha', 'Cuenta', 'OrdenPago', 'Beneficiario', 'CodigoPartida', 'DescripcionPartida', 'Descripcion', 'MontoSinIVA', 'IVA', 'FuenteDeFinanciamiento']]
-    datos=datos[['Fecha', 'Cuenta', 'OrdenPago', 'Beneficiario', 'Referencia', 'MontoPagado','totalRetenido']]
+    datos=datos[['Fecha', 'Cuenta', 'OrdenPago', 'Beneficiario', 'CodigoPartida', 'DescripcionPartida', 'Descripcion', 'MontoSinIVA', 'IVA', 'Referencia', 'MontoPagado','totalRetenido', 'FuenteDeFinanciamiento']]
+    #datos=datos[['Fecha', 'Cuenta', 'OrdenPago', 'Beneficiario', 'Referencia', 'MontoPagado','totalRetenido']]
     
     return datos
 
